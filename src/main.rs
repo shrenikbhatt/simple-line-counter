@@ -11,12 +11,8 @@ fn main() {
         eprintln!("Error: {}", err);
         process::exit(1);
     });
-    for filename in files.names {
-        println!("\nProcessing file: {}", filename);
-        if let Err(e) = simple_line_counter::run(&filename, &flags) {
-            eprintln!("Error: {}", e);
-            process::exit(1);
-        }
-    }
+
+    let exit_code: i32 = simple_line_counter::multi_run(&files.names, &flags);
+    process::exit(exit_code);
 }
 

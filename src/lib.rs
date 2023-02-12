@@ -27,6 +27,18 @@ impl Flags {
     }
 }
 
+pub fn multi_run(filenames: &Vec<String>, flags: &Flags) -> i32 {
+    let mut exit_code: i32 = 0;
+    for filename in filenames {
+        println!("\nProcessing file: {}", filename);
+        if let Err(e) = run(&filename, &flags) {
+            eprintln!("Error: {}", e);
+            exit_code = 1;
+        }
+    }
+    return exit_code;
+}
+
 pub fn run(filename: &str, flags: &Flags) -> Result<(), Box<dyn Error>> {
     let file_contents: String = fs::read_to_string(&filename)?;
 
@@ -64,7 +76,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn get_single_line_count() {
+    fn test_get_single_line_count() {
         let contents = "\
 There are
 this many lines
@@ -74,7 +86,7 @@ here.";
     }
 
     #[test]
-    fn get_single_line_count_and_contents() {
+    fn test_get_single_line_count_and_contents() {
         let contents: &str = "\
 There are
 this many lines
@@ -105,7 +117,35 @@ test.";
     fn test_parsing_multiple_args_failure() {
         let args: &[String] = &["[/bin/target]".to_string()];
 
-        let files: &str = Files::new(args).unwrap_err();
-        assert_eq!("Incorrect number of arguments. Expected at least 1.", files)
+        let err: &str = Files::new(args).unwrap_err();
+        assert_eq!("Incorrect number of arguments. Expected at least 1.", err)
+    }
+
+    #[test]
+    fn test_run_success() {
+        let filename: &str = "test1.txt";
+        let flags: Flags = Flags::new();
+        assert_eq!(true, run(&filename, &flags).is_ok());
+    }
+
+    #[test]
+    fn test_run_failure() {
+        let filename: &str = "does-not-exist.abc";
+        let flags: Flags = Flags::new();
+        assert_eq!(true, run(&filename, &flags).is_err());
+    }
+
+    #[test]
+    fn test_multi_run_success() {
+        let filenames: Vec<String> = ["test1.txt".to_string(), "test2.txt".to_string()].to_vec();
+        let flags: Flags = Flags::new();
+        assert_eq!(0, multi_run(&filenames, &flags));
+    }
+
+    #[test]
+    fn test_multi_run_failure() {
+        let filenames: Vec<String> = ["test2.txt".to_string(), "does-not-exist.abc".to_string()].to_vec();
+        let flags: Flags = Flags::new();
+        assert_eq!(1, multi_run(&filenames, &flags))
     }
 }
