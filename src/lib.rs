@@ -1,18 +1,18 @@
 use std::env;
 use std::error::Error;
 use std::fs;
-
-pub struct File {
-    pub name: String,
+#[derive(Debug)]
+pub struct Files {
+    pub names: Vec<String>,
 }
 
-impl File {
-    pub fn new(args: &[String]) -> Result<File, &str> {
-        if args.len() != 2 {
-            return Err("Incorrect number of arguments. Expected 1.")
+impl Files {
+    pub fn new(args: &[String]) -> Result<Files, &str> {
+        if args.len() < 2 {
+            return Err("Incorrect number of arguments. Expected at least 1.")
         }
-        let filename: String = args[1].clone();
-        return Ok(File { name: filename });
+        let filenames: Vec<String> = args[1 .. args.len()].to_vec();
+        return Ok(Files { names: filenames });
     }
 }
 
@@ -27,14 +27,14 @@ impl Flags {
     }
 }
 
-pub fn run(file: &File, flags: &Flags) -> Result<(), Box<dyn Error>> {
-    let file_contents: String = fs::read_to_string(&file.name)?;
+pub fn run(filename: &str, flags: &Flags) -> Result<(), Box<dyn Error>> {
+    let file_contents: String = fs::read_to_string(&filename)?;
 
     if !flags.enumerate_contents {
-        println!("{} contains {} lines", file.name, count(&file_contents));
+        println!("{} contains {} lines", filename, count(&file_contents));
     } else {
         let (count, enumerated_contents): (usize, String) = count_and_print(&file_contents);
-        println!("{} contains {} lines", file.name, count);
+        println!("{} contains {} lines", filename, count);
         println!("{}", enumerated_contents);
     }
     
@@ -64,7 +64,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn get_line_count() {
+    fn get_single_line_count() {
         let contents = "\
 There are
 this many lines
@@ -74,7 +74,7 @@ here.";
     }
 
     #[test]
-    fn get_line_count_and_contents() {
+    fn get_single_line_count_and_contents() {
         let contents: &str = "\
 There are
 this many lines
@@ -88,5 +88,24 @@ test.";
 4. test.".to_string();
 
         assert_eq!((4, result), count_and_print(contents));
+    }
+
+    #[test]
+    fn test_parsing_multiple_args_success() {
+        let args: &[String] = &["[/bin/target]".to_string(), "file1.txt".to_string(), "file2.txt".to_string(), "file3".to_string()];
+
+        let files: Files = Files::new(args).unwrap();
+        assert_eq!(3, files.names.len());
+        assert_eq!("file1.txt", files.names[0]);
+        assert_eq!("file2.txt", files.names[1]);
+        assert_eq!("file3", files.names[2]);
+    }
+
+    #[test]
+    fn test_parsing_multiple_args_failure() {
+        let args: &[String] = &["[/bin/target]".to_string()];
+
+        let files: &str = Files::new(args).unwrap_err();
+        assert_eq!("Incorrect number of arguments. Expected at least 1.", files)
     }
 }
