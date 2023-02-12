@@ -12,7 +12,7 @@ fn main() {
         process::exit(1);
     });
 
-    let exit_code: i32 = simple_line_counter::multi_run(&files.names, &flags);
+    let exit_code: i32 = simple_line_counter::multi_run(&files, &flags);
     process::exit(exit_code);
 }
 

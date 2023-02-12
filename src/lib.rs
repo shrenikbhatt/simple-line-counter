@@ -4,6 +4,7 @@ use std::fs;
 #[derive(Debug)]
 pub struct Files {
     pub names: Vec<String>,
+    pub count: usize,
 }
 
 impl Files {
@@ -12,7 +13,8 @@ impl Files {
             return Err("Incorrect number of arguments. Expected at least 1.")
         }
         let filenames: Vec<String> = args[1 .. args.len()].to_vec();
-        return Ok(Files { names: filenames });
+        let count = filenames.len();
+        return Ok(Files { names: filenames, count });
     }
 }
 
@@ -27,15 +29,18 @@ impl Flags {
     }
 }
 
-pub fn multi_run(filenames: &Vec<String>, flags: &Flags) -> i32 {
+pub fn multi_run(files: &Files, flags: &Flags) -> i32 {
     let mut exit_code: i32 = 0;
-    for filename in filenames {
+    let mut failed_files: usize = 0;
+    for filename in &files.names {
         println!("\nProcessing file: {}", filename);
         if let Err(e) = run(&filename, &flags) {
             eprintln!("Error: {}", e);
             exit_code = 1;
+            failed_files += 1;
         }
     }
+    println!("Processed successfully: {}, failed {}", files.count - failed_files, failed_files);
     return exit_code;
 }
 
@@ -138,14 +143,18 @@ test.";
     #[test]
     fn test_multi_run_success() {
         let filenames: Vec<String> = ["test1.txt".to_string(), "test2.txt".to_string()].to_vec();
+        let count = filenames.len();
+        let files: Files = Files { names: filenames, count };
         let flags: Flags = Flags::new();
-        assert_eq!(0, multi_run(&filenames, &flags));
+        assert_eq!(0, multi_run(&files, &flags));
     }
 
     #[test]
     fn test_multi_run_failure() {
         let filenames: Vec<String> = ["test2.txt".to_string(), "does-not-exist.abc".to_string()].to_vec();
+        let count = filenames.len();
+        let files: Files = Files { names: filenames, count };
         let flags: Flags = Flags::new();
-        assert_eq!(1, multi_run(&filenames, &flags))
+        assert_eq!(1, multi_run(&files, &flags))
     }
 }
